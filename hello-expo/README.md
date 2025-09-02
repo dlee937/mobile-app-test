@@ -7,8 +7,8 @@ This app was made as a proof of concept. It is using React Native and Expo to be
 
 ## Screenshots From Sample Application
 
-<img width="206" height="452" alt="image" src="https://github.com/user-attachments/assets/3fa969ab-fcf6-413b-9191-179cf77c2bf7" />
+<img width="283" height="617" alt="image" src="https://github.com/user-attachments/assets/3fa969ab-fcf6-413b-9191-179cf77c2bf7" />
 
-<img width="215" height="471" alt="image" src="https://github.com/user-attachments/assets/585ae919-c683-488d-8039-50057d2f2ad4" />
+<img width="283" height="617" alt="image" src="https://github.com/user-attachments/assets/585ae919-c683-488d-8039-50057d2f2ad4" />
 
 <img width="283" height="617" alt="image" src="https://github.com/user-attachments/assets/b2245283-bc24-49eb-aaca-98ee03178f60" />
