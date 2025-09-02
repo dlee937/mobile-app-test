@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { supabase } from '../../lib/supabase';
+import { Alert, Pressable } from 'react-native';
 
 type Entry = {
   id: string;
@@ -96,28 +97,31 @@ export default function HomeScreen() {
 
   const renderItem = ({ item }: { item: Entry }) => {
     const when = item.created_at ? new Date(item.created_at).toLocaleString() : '';
+
+    const onPressRow = () => {
+      Alert.alert(
+        item.text || 'Entry',   // 👈 title
+        when || 'No date available', // 👈 description
+        [{ text: 'OK' }]        // 👈 single OK button
+      );
+    };
+
     return (
-      <View style={styles.row}>
+      <Pressable onPress={onPressRow} style={({ pressed }) => [styles.row, pressed && { backgroundColor: '#f0f0f0' }]}>
         <Text style={styles.rowText}>{item.text}</Text>
-        <Text style={styles.rowMeta}>
-          {when}
-        </Text>
-        <Text style={styles.rowMeta}>
-          {item.mood != null ? `Mood ${item.mood}` : ''}
-        </Text>
-        <Text style={styles.rowMeta}>
-          {item.weather ? `Weather: ${item.weather}` : ''}
-        </Text>
+        <Text style={styles.rowMeta}>{when}</Text>
+        <Text style={styles.rowMeta}>{item.mood != null ? `Mood ${item.mood}` : ''}</Text>
+        <Text style={styles.rowMeta}>{item.weather ? `Weather: ${item.weather}` : ''}</Text>
         {item.lat != null && item.lng != null ? (
           <Text style={styles.rowMetaSmall}>
-           Latitude: {item.lat.toFixed(4)}, Longitude: {item.lng.toFixed(4)}
+            Latitude: {item.lat.toFixed(4)}, Longitude: {item.lng.toFixed(4)}
           </Text>
         ) : null}
-      </View>
+      </Pressable>
     );
   };
 
-  const WEATHER_API_KEY = 'bfbe90ac8554b36605cc11902e437ef7';
+  const WEATHER_API_KEY = process.env.WEATHER_API_KEY;;
 
   async function fetchWeather(lat: number, lng: number): Promise<string | null> {
     try {
