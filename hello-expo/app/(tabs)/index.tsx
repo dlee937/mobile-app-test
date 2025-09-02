@@ -23,6 +23,7 @@ type Entry = {
   lat: number | null;
   lng: number | null;
   weather: string | null;
+  temperature: number | null;
 };
 
 const TABLE = 'data';
@@ -72,6 +73,7 @@ export default function HomeScreen() {
     let lat: number | null = null;
     let lng: number | null = null;
     let weather: string | null = null;
+    let temperature: number | null = null;
 
     if (useLocation) {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -79,7 +81,9 @@ export default function HomeScreen() {
         const pos = await Location.getCurrentPositionAsync({});
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
-        weather = await fetchWeather(lat, lng);
+        const w = await fetchWeather(lat, lng);
+        weather = w.weather;
+        temperature = w.temperature;
       }
     }
 
@@ -87,7 +91,7 @@ export default function HomeScreen() {
 
     const { error: insErr } = await supabase
       .from(TABLE)
-      .insert({ text: trimmed, mood: moodNumber, lat, lng, weather });
+      .insert({ text: trimmed, mood: moodNumber, lat, lng, weather, temperature });
 
     if (insErr) setError(insErr.message);
     setText('');
@@ -111,7 +115,10 @@ export default function HomeScreen() {
         <Text style={styles.rowText}>{item.text}</Text>
         <Text style={styles.rowMeta}>{when}</Text>
         <Text style={styles.rowMeta}>{item.mood != null ? `Mood ${item.mood}` : ''}</Text>
-        <Text style={styles.rowMeta}>{item.weather ? `Weather: ${item.weather}` : ''}</Text>
+        <Text style={styles.rowMeta}>
+          {item.weather ? `Weather: ${item.weather}` : ''}
+          {item.temperature != null ? `, Temperature: ${item.temperature.toFixed(1)} °F` : ''}
+        </Text>
         {item.lat != null && item.lng != null ? (
           <Text style={styles.rowMetaSmall}>
             Latitude: {item.lat.toFixed(4)}, Longitude: {item.lng.toFixed(4)}
@@ -121,22 +128,31 @@ export default function HomeScreen() {
     );
   };
 
-  const WEATHER_API_KEY = process.env.WEATHER_API_KEY;;
+  const WEATHER_API_KEY = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
 
-  async function fetchWeather(lat: number, lng: number): Promise<string | null> {
-    try {
-      const resp = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${WEATHER_API_KEY}&units=metric`
-      );
-      const data = await resp.json();
-      if (data.weather && data.weather.length > 0) {
-        return data.weather[0].main;
-      }
-    } catch (err) {
-      console.log('Weather fetch failed:', err);
+  async function fetchWeather(
+  lat: number,
+  lng: number
+): Promise<{ weather: string | null; temperature: number | null }> {
+  try {
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${WEATHER_API_KEY}&units=metric`;
+
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (data.weather && data.weather.length > 0) {
+      return {
+        weather: data.weather[0].main,
+        temperature: data.main?.temp ?? null,
+      };
+    } else {
+      console.warn("⚠️ No weather info found in response");
     }
-    return null;
+  } catch (err) {
+    console.error("Weather fetch failed:", err);
   }
+  return { weather: null, temperature: null };
+}
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
