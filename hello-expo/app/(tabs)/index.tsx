@@ -178,7 +178,7 @@ export default function HomeScreen() {
           <TextInput
             value={mood}
             onChangeText={setMood}
-            placeholder="Mood (0–5)"
+            placeholder="Mood (1–5)"
             placeholderTextColor="#727272ff"
             keyboardType="number-pad"
             maxLength={1}
