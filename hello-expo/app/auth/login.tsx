@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen() {
@@ -54,7 +54,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Mood Journal</Text>
+        <Text style={styles.title}>Mood & Food Journal</Text>
         <Text style={styles.subtitle}>
           {isSignUp ? 'Create your account' : 'Welcome back'}
         </Text>
