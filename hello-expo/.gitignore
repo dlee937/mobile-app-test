@@ -3,7 +3,6 @@
 # dependencies
 node_modules/
 .env
-.env_copy
 
 # Expo
 .expo/
