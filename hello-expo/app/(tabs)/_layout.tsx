@@ -33,12 +33,12 @@ export default function TabLayout() {
     return null;
   }
 
-  // Show login screen if no session - completely replaces tab navigation
+  // Show login screen if no session
   if (!session) {
     return <LoginScreen />;
   }
 
-  // After login: show only the 3 main app tabs (no login/auth tab)
+  // After login: show all 4 tabs
   return (
     <Tabs
       screenOptions={{
@@ -56,8 +56,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Mood',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="food"
+        options={{
+          title: 'Food',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="fork.knife" color={color} />,
         }}
       />
       <Tabs.Screen
