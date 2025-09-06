@@ -54,7 +54,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Mood Journal</Text>
+        <Text style={styles.title}>Welcome to Your Mood Journal!</Text>
         <Text style={styles.subtitle}>
           {isSignUp ? 'Create your account' : 'Welcome back'}
         </Text>
