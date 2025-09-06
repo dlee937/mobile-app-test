@@ -1,7 +1,7 @@
+import type { Session } from '@supabase/supabase-js';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import type { Session } from '@supabase/supabase-js';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -33,12 +33,12 @@ export default function TabLayout() {
     return null;
   }
 
-  // Show login screen if no session
+  // Show login screen if no session - completely replaces tab navigation
   if (!session) {
     return <LoginScreen />;
   }
 
-  // After login: show all 4 tabs
+  // After login: show the main app tabs
   return (
     <Tabs
       screenOptions={{
