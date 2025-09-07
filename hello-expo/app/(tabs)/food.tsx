@@ -25,6 +25,10 @@ type FoodEntry = {
   id: string;
   food_name: string;
   calories: number | null;
+  protein: number | null;  // Add this
+  carbs: number | null;    // Add this
+  fat: number | null;      // Add this
+  fiber: number | null;    // Add this
   meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   rating: number | null;
   notes: string | null;
@@ -84,6 +88,7 @@ export default function FoodScreen() {
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
   const [rating, setRating] = useState<string>('3');
   const [notes, setNotes] = useState<string>('');
+  const [selectedNutrition, setSelectedNutrition] = useState<NutritionInfo | null>(null);
   
   const [items, setItems] = useState<FoodEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -91,6 +96,33 @@ export default function FoodScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+
+  const clearAllEntries = () => {
+  Alert.alert(
+    'Clear All Entries',
+    'Are you sure you want to delete all your food entries? This cannot be undone.',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Delete All', 
+        style: 'destructive',
+        onPress: async () => {
+          const { error } = await supabase
+            .from(FOOD_TABLE)
+            .delete()
+            .eq('user_id', userId);
+          
+          if (error) {
+            Alert.alert('Error', error.message);
+          } else {
+            Alert.alert('Success', 'All entries cleared');
+            await fetchItems();
+          }
+        }
+      }
+    ]
+  );
+};
   
   // Feature 2: Nutrition lookup modal
   const [showNutritionModal, setShowNutritionModal] = useState(false);
@@ -100,6 +132,10 @@ export default function FoodScreen() {
   const [showSummary, setShowSummary] = useState(false);
   const [dailySummary, setDailySummary] = useState<{
     totalCalories: number;
+    totalProtein: number;     // Add this
+    totalCarbs: number;       // Add this
+    totalFat: number;         // Add this
+    totalFiber: number;       // Add this
     mealCounts: { breakfast: number; lunch: number; dinner: number; snack: number };
     averageRating: number;
   } | null>(null);
@@ -162,6 +198,11 @@ export default function FoodScreen() {
     );
 
     const totalCalories = todayEntries.reduce((sum, entry) => sum + (entry.calories || 0), 0);
+    const totalProtein = todayEntries.reduce((sum, entry) => sum + (entry.protein || 0), 0);
+    const totalCarbs = todayEntries.reduce((sum, entry) => sum + (entry.carbs || 0), 0);
+    const totalFat = todayEntries.reduce((sum, entry) => sum + (entry.fat || 0), 0);
+    const totalFiber = todayEntries.reduce((sum, entry) => sum + (entry.fiber || 0), 0);
+    
     const mealCounts = {
       breakfast: todayEntries.filter(e => e.meal_type === 'breakfast').length,
       lunch: todayEntries.filter(e => e.meal_type === 'lunch').length,
@@ -172,7 +213,15 @@ export default function FoodScreen() {
     const ratingsSum = todayEntries.reduce((sum, entry) => sum + (entry.rating || 0), 0);
     const averageRating = todayEntries.length > 0 ? ratingsSum / todayEntries.length : 0;
 
-    setDailySummary({ totalCalories, mealCounts, averageRating });
+    setDailySummary({ 
+      totalCalories, 
+      totalProtein, 
+      totalCarbs, 
+      totalFat, 
+      totalFiber, 
+      mealCounts, 
+      averageRating 
+    });
   };
 
   useEffect(() => {
@@ -220,16 +269,20 @@ export default function FoodScreen() {
       return;
     }
 
-    const { error: insErr } = await supabase
-      .from(FOOD_TABLE)
-      .insert({ 
-        food_name: trimmedName,
-        calories: caloriesNumber,
-        meal_type: mealType,
-        rating: ratingNumber,
-        notes: notes.trim() || null,
-        user_id: userId
-      });
+  const { error: insErr } = await supabase
+  .from(FOOD_TABLE)
+  .insert({ 
+    food_name: trimmedName,
+    calories: caloriesNumber,
+    protein: selectedNutrition?.protein || null,
+    carbs: selectedNutrition?.carbs || null,
+    fat: selectedNutrition?.fat || null,
+    fiber: selectedNutrition?.fat || null, // API doesn't have fiber, using fat as placeholder
+    meal_type: mealType,
+    rating: ratingNumber,
+    notes: notes.trim() || null,
+    user_id: userId
+  });
 
     if (insErr) {
       setError(insErr.message);
@@ -241,6 +294,7 @@ export default function FoodScreen() {
       setFoodName('');
       setCalories('');
       setNotes('');
+      setSelectedNutrition(null);
     }
     
     await fetchItems();
@@ -265,6 +319,7 @@ export default function FoodScreen() {
   const selectNutritionItem = (nutrition: NutritionInfo) => {
     setFoodName(nutrition.name);
     setCalories(nutrition.calories.toString());
+    setSelectedNutrition(nutrition); // Store the full nutrition data
     setShowNutritionModal(false);
     Alert.alert(
       'Nutrition Info Applied!',
@@ -285,9 +340,12 @@ export default function FoodScreen() {
 
     const onPressRow = () => {
       const safeNotes = item.notes ? sanitizeInput(item.notes) : '';
+      const macroInfo = (item.protein || item.carbs || item.fat) ? 
+        `\nProtein: ${item.protein || 0}g, Carbs: ${item.carbs || 0}g, Fat: ${item.fat || 0}g` : '';
+      
       Alert.alert(
         `${mealEmoji} ${item.food_name}`,
-        `${when}\n\nMeal: ${item.meal_type}\nCalories: ${item.calories || 'Not specified'}\nRating: ${ratingStars} (${item.rating}/5)${safeNotes ? `\n\nNotes: ${safeNotes}` : ''}`,
+        `${when}\n\nMeal: ${item.meal_type}\nCalories: ${item.calories || 'Not specified'}${macroInfo}\nRating: ${ratingStars} (${item.rating}/5)${safeNotes ? `\n\nNotes: ${safeNotes}` : ''}`,
         [{ text: 'OK' }]
       );
     };
@@ -341,6 +399,14 @@ return (
                 <Text style={styles.featureButtonText}>📊 Daily Summary</Text>
               </TouchableOpacity>
             </View>
+
+            {/* Add this new section right after the feature buttons */}
+            <View style={styles.clearButtonContainer}>
+              <TouchableOpacity style={styles.clearButton} onPress={clearAllEntries}>
+                <Text style={styles.clearButtonText}>Clear All Entries</Text>
+              </TouchableOpacity>
+            </View>
+            
 
             {/* Food Entry Form */}
             <View style={styles.formContainer}>
@@ -545,6 +611,13 @@ return (
                           <Text style={styles.mealCount}>🍿 Snacks: {dailySummary.mealCounts.snack}</Text>
                         </View>
                       </View>
+                      <View style={styles.summarySection}>
+                        <Text style={styles.summaryLabel}>Macronutrients</Text>
+                        <Text style={styles.summaryValue}>Protein: {dailySummary.totalProtein.toFixed(1)}g</Text>
+                        <Text style={styles.summaryValue}>Carbs: {dailySummary.totalCarbs.toFixed(1)}g</Text>
+                        <Text style={styles.summaryValue}>Fat: {dailySummary.totalFat.toFixed(1)}g</Text>
+                        <Text style={styles.summaryValue}>Fiber: {dailySummary.totalFiber.toFixed(1)}g</Text>
+                      </View>
                       
                       <View style={styles.summarySection}>
                         <Text style={styles.summaryLabel}>Average Rating</Text>
@@ -584,6 +657,21 @@ const styles = StyleSheet.create({
     marginBottom: 8, 
     textAlign: 'center',
     color: '#8b4513'
+  },
+    clearButtonContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  clearButton: {
+    backgroundColor: '#dc2626',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  clearButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
   },
   desc: { 
     fontSize: 16, 
