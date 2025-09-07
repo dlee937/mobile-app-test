@@ -1,23 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Button,
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Button,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
@@ -42,18 +42,40 @@ type NutritionInfo = {
 
 const FOOD_TABLE = 'food_entries';
 
-// Mock nutrition database
-const NUTRITION_DB: { [key: string]: NutritionInfo } = {
-  'apple': { name: 'Apple', calories: 95, protein: 0.5, carbs: 25, fat: 0.3 },
-  'banana': { name: 'Banana', calories: 105, protein: 1.3, carbs: 27, fat: 0.4 },
-  'chicken breast': { name: 'Chicken Breast (100g)', calories: 165, protein: 31, carbs: 0, fat: 3.6 },
-  'rice': { name: 'Rice (1 cup)', calories: 205, protein: 4.3, carbs: 45, fat: 0.4 },
-  'broccoli': { name: 'Broccoli (1 cup)', calories: 25, protein: 3, carbs: 5, fat: 0.3 },
-  'salmon': { name: 'Salmon (100g)', calories: 208, protein: 20, carbs: 0, fat: 12 },
-  'bread': { name: 'Bread (1 slice)', calories: 80, protein: 3, carbs: 15, fat: 1 },
-  'egg': { name: 'Egg (1 large)', calories: 70, protein: 6, carbs: 0.6, fat: 5 },
-  'pasta': { name: 'Pasta (1 cup)', calories: 220, protein: 8, carbs: 44, fat: 1.1 },
-  'yogurt': { name: 'Greek Yogurt (1 cup)', calories: 130, protein: 20, carbs: 9, fat: 0 },
+const searchFoodAPI = async (query: string): Promise<NutritionInfo[]> => {
+  const API_KEY = process.env.EXPO_PUBLIC_FOOD_API_KEY;
+  
+  if (!API_KEY) {
+    Alert.alert('Error', 'Food API key not configured');
+    return [];
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&api_key=${API_KEY}&pageSize=10`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    return data.foods?.map((food: any) => {
+      const nutrients = food.foodNutrients || [];
+      return {
+        name: food.description || 'Unknown Food',
+        calories: Math.round(nutrients.find((n: any) => n.nutrientId === 1008)?.value || 0),
+        protein: Math.round(nutrients.find((n: any) => n.nutrientId === 1003)?.value || 0),
+        carbs: Math.round(nutrients.find((n: any) => n.nutrientId === 1005)?.value || 0),
+        fat: Math.round(nutrients.find((n: any) => n.nutrientId === 1004)?.value || 0),
+      };
+    }) || [];
+  } catch (error) {
+    console.error('Food API Error:', error);
+    Alert.alert('Error', 'Failed to search food database');
+    return [];
+  }
 };
 
 export default function FoodScreen() {
@@ -226,17 +248,16 @@ export default function FoodScreen() {
   };
 
   // Feature 2: Nutrition lookup
-  const searchNutrition = () => {
+// Feature 2: Nutrition lookup - REPLACE THE EXISTING FUNCTION
+  const searchNutrition = async () => {
     const query = foodName.toLowerCase().trim();
     if (!query) {
       Alert.alert('Search', 'Enter a food name to search nutrition info');
       return;
     }
 
-    const results = Object.values(NUTRITION_DB).filter(food =>
-      food.name.toLowerCase().includes(query)
-    );
-
+    setNutritionResults([]);
+    const results = await searchFoodAPI(query);
     setNutritionResults(results);
     setShowNutritionModal(true);
   };
